@@ -29,42 +29,55 @@ FASE 6: Launch (3-4 dias) → Marketplace público
 
 ## 🚀 FASE 0: Setup Rápido (1 dia)
 
-### Git + Estrutura
+### ✅ Git + Estrutura (COMPLETO)
 ```bash
+# Estrutura criada
 git init smart-chart-copilot
 cd smart-chart-copilot
-mkdir -p gas-project cloud-functions/analyze-data
+mkdir -p gas-project cloud-functions/analyze-data cloud-functions/suggest-title
 
-# .gitignore
-echo "node_modules/
-.env
-.clasp.json" > .gitignore
+# .gitignore criado
+# .env.example criado
+# README.md completo criado
 
 # Primeiro commit
 git add .
-git commit -m "feat: initial setup"
+git commit -m "feat: initial setup - project structure and documentation"
 git branch -M main
+git remote add origin https://github.com/luisotaviomoretti/smart-chart-copilot.git
+git push -u origin main
+git tag v0.0.1 -m "FASE 0: Initial setup complete"
+git push --tags
 ```
 
-### GCP Setup
-```bash
-# Criar projeto
-gcloud projects create smart-chart-copilot
+**Status:** ✅ Completo - Repositório criado e no GitHub
 
-# Habilitar APIs (copiar/colar tudo)
-gcloud services enable \
-  slides.googleapis.com \
-  sheets.googleapis.com \
-  drive.googleapis.com \
-  cloudfunctions.googleapis.com \
-  secretmanager.googleapis.com \
-  generativelanguage.googleapis.com
+---
 
-# Gemini API key
-# Criar em: https://ai.google.dev/
-gcloud secrets create gemini-api-key --data-file=-
-# (colar key, Ctrl+D)
+### ✅ GCP Setup (COMPLETO)
+
+**Realizado via Console Web:**
+
 ```
+✅ Projeto criado: smart-chart-copilot
+✅ Billing habilitado
+✅ APIs habilitadas (via console.cloud.google.com/apis):
+   - Google Slides API
+   - Google Sheets API
+   - Google Drive API
+   - Cloud Functions API
+   - Secret Manager API
+   - Generative Language API (Gemini)
+
+✅ OAuth 2.0 Consent Screen configurado
+✅ OAuth Client ID criado e salvo em .env
+✅ Gemini API Key obtida (https://ai.google.dev/)
+✅ Secret Manager configurado com gemini-api-key
+```
+
+**Credenciais salvas em:** `.env` (não commitado)
+
+**Status:** ✅ Completo - Infra GCP pronta
 
 ### Apps Script
 ```bash

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
+      padding: 16px;
+      background: #f8f9fa;
+      color: #202124;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      color: #4285F4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #dadce0;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      color: #5f6368;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #202124;
+    }
+
+    .tab.active {
+      color: #4285F4;
+      border-bottom-color: #4285F4;
+      font-weight: 500;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 16px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    button {
+      background: #4285F4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      background: #3367d6;
+    }
+
+    button.secondary {
+      background: white;
+      color: #4285F4;
+      border: 1px solid #dadce0;
+    }
+
+    button.secondary:hover {
+      background: #f8f9fa;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-top: 8px;
+      font-family: monospace;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #5f6368;
+    }
+
+    #preview {
+      margin-top: 16px;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    #preview h3 {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #5f6368;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 6px;
+      text-align: left;
+      border-bottom: 1px solid #e8eaed;
+    }
+
+    th {
+      background: #f8f9fa;
+      font-weight: 500;
+      color: #5f6368;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #5f6368;
+    }
+
+    .error {
+      background: #fce8e6;
+      color: #c5221f;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 8px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 Smart Chart Co-Pilot</h2>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('sheets')">Google Sheets</button>
+    <button class="tab" onclick="showTab('manual')">Manual Input</button>
+  </div>
+
+  <!-- Google Sheets Tab -->
+  <div id="sheets-tab" class="tab-content active">
+    <label>Select Google Sheet</label>
+    <button onclick="showPicker()">📁 Browse Drive</button>
+
+    <div id="range-input" class="hidden">
+      <label>Range (e.g., Sheet1!A1:D10)</label>
+      <input type="text" id="range" placeholder="Sheet1!A1:D10">
+      <button onclick="importData()">Import Data</button>
+    </div>
+  </div>
+
+  <!-- Manual Input Tab -->
+  <div id="manual-tab" class="tab-content">
+    <label>Paste data from Excel/Sheets</label>
+    <textarea id="paste-area" placeholder="Paste your data here (tab-separated)"></textarea>
+    <button onclick="parseManual()">Load Data</button>
+  </div>
+
+  <!-- Preview -->
+  <div id="preview" class="hidden">
+    <h3>Preview (first 10 rows)</h3>
+    <div id="preview-content"></div>
+  </div>
+
+  <script>
+    // Global variables
+    window.currentData = null;
+    window.selectedFileId = null;
+
+    /**
+     * Switch between tabs
+     */
+    function showTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    /**
+     * Show Google Picker
+     */
+    function showPicker() {
+      google.script.run
+        .withSuccessHandler(createPicker)
+        .withFailureHandler(showError)
+        .getOAuthToken();
+    }
+
+    /**
+     * Create Google Picker
+     */
+    function createPicker(token) {
+      const picker = new google.picker.PickerBuilder()
+        .addView(google.picker.ViewId.SPREADSHEETS)
+        .setOAuthToken(token)
+        .setCallback(pickerCallback)
+        .build();
+      picker.setVisible(true);
+    }
+
+    /**
+     * Picker callback
+     */
+    function pickerCallback(data) {
+      if (data.action === google.picker.Action.PICKED) {
+        window.selectedFileId = data.docs[0].id;
+        document.getElementById('range-input').classList.remove('hidden');
+      }
+    }
+
+    /**
+     * Import data from Sheets
+     */
+    function importData() {
+      const range = document.getElementById('range').value;
+
+      if (!window.selectedFileId || !range) {
+        showError('Please select a file and enter a range');
+        return;
+      }
+
+      showLoading();
+
+      google.script.run
+        .withSuccessHandler(handleImportSuccess)
+        .withFailureHandler(showError)
+        .importFromSheets(window.selectedFileId, range);
+    }
+
+    /**
+     * Parse manual input
+     */
+    function parseManual() {
+      const text = document.getElementById('paste-area').value;
+
+      if (!text.trim()) {
+        showError('Please paste some data');
+        return;
+      }
+
+      const rows = text.trim().split('\n').map(row => row.split('\t'));
+
+      handleImportSuccess({
+        success: true,
+        data: rows,
+        headers: rows[0],
+        rows: rows.slice(1)
+      });
+    }
+
+    /**
+     * Handle successful import
+     */
+    function handleImportSuccess(result) {
+      if (!result.success) {
+        showError(result.error);
+        return;
+      }
+
+      window.currentData = result.data;
+      showPreview(result.data);
+    }
+
+    /**
+     * Show data preview
+     */
+    function showPreview(data) {
+      const preview = document.getElementById('preview');
+      const content = document.getElementById('preview-content');
+
+      if (!data || data.length === 0) {
+        content.innerHTML = '<p>No data to preview</p>';
+        return;
+      }
+
+      // Show first 10 rows
+      const displayData = data.slice(0, 10);
+
+      let html = '<table>';
+
+      // Headers
+      html += '<tr>';
+      displayData[0].forEach(cell => {
+        html += `<th>${cell}</th>`;
+      });
+      html += '</tr>';
+
+      // Rows
+      for (let i = 1; i < displayData.length; i++) {
+        html += '<tr>';
+        displayData[i].forEach(cell => {
+          html += `<td>${cell}</td>`;
+        });
+        html += '</tr>';
+      }
+
+      html += '</table>';
+
+      content.innerHTML = html;
+      preview.classList.remove('hidden');
+    }
+
+    /**
+     * Show loading state
+     */
+    function showLoading() {
+      const preview = document.getElementById('preview');
+      const content = document.getElementById('preview-content');
+      content.innerHTML = '<div class="loading">Loading...</div>';
+      preview.classList.remove('hidden');
+    }
+
+    /**
+     * Show error message
+     */
+    function showError(error) {
+      const preview = document.getElementById('preview');
+      const content = document.getElementById('preview-content');
+      content.innerHTML = `<div class="error">Error: ${error}</div>`;
+      preview.classList.remove('hidden');
+    }
+
+    /**
+     * Test function
+     */
+    function testConnection() {
+      google.script.run
+        .withSuccessHandler(result => {
+          console.log('Test result:', result);
+          alert('Connection working! ' + result.message);
+        })
+        .withFailureHandler(error => {
+          console.error('Test failed:', error);
+          alert('Test failed: ' + error);
+        })
+        .test();
+    }
+
+    // Test connection on load
+    testConnection();
+  </script>
+
+  <!-- Google Picker API -->
+  <script src="https://apis.google.com/js/api.js"></script>
+</body>
+</html>
