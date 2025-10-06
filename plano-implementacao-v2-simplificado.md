@@ -79,26 +79,44 @@ git push --tags
 
 **Status:** ✅ Completo - Infra GCP pronta
 
-### Apps Script
-```bash
-npm install -g @google/clasp
-clasp login
-clasp create --type standalone --title "Smart Chart Co-Pilot"
-clasp push
+---
+
+### ✅ Apps Script Setup (COMPLETO)
+
+**Realizado via Console Web:**
+
+```
+✅ Clasp instalado globalmente: npm install -g @google/clasp
+✅ Projeto Apps Script criado manualmente: script.google.com
+✅ Arquivos criados e deployados:
+   - appsscript.json (manifest com OAuth scopes)
+   - Code.gs (funções: onOpen, showSidebar, importFromSheets, getOAuthToken, test)
+   - Sidebar.html (UI completa com tabs, Google Picker, preview)
+
+✅ Autorização OAuth resolvida (test user adicionado)
+✅ Sidebar testada e funcionando
+✅ Teste de conexão executado com sucesso: "Apps Script is working!"
 ```
 
-### Cloud Function Hello World
+**Tag criada:** v0.0.2
+
+**Status:** ✅ Completo - Apps Script funcionando
+
+---
+
+### Cloud Function Hello World (EM ANDAMENTO)
+
 ```bash
 cd cloud-functions/analyze-data
 npm init -y
-npm install @google-cloud/functions-framework @google/genai
+npm install @google-cloud/functions-framework @google/generai
 
 # index.js
 cat > index.js << 'EOF'
 const functions = require('@google-cloud/functions-framework');
 functions.http('analyzeData', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', message: 'Cloud Function working!' });
 });
 EOF
 
@@ -111,16 +129,16 @@ gcloud functions deploy analyzeData \
 ```
 
 ### ✅ Checklist FASE 0
-- [ ] Git repo + main branch
-- [ ] GCP APIs habilitadas
-- [ ] Apps Script deployado
+- [x] Git repo + main branch
+- [x] GCP APIs habilitadas
+- [x] Apps Script deployado
 - [ ] Cloud Function responde
 
-**Commit:**
+**Commit final:**
 ```bash
 git add .
-git commit -m "feat: infra completa"
-git tag v0.0.1
+git commit -m "feat: FASE 0 completa - infra + Apps Script + Cloud Function"
+git tag v0.0.3
 git push origin main --tags
 ```
 
